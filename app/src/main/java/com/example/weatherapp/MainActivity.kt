@@ -1,28 +1,116 @@
 package com.example.weatherapp
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.*
 import android.os.AsyncTask
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.TextView
+import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
 import org.json.JSONObject
 import java.lang.Exception
 import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 
+
 class MainActivity : AppCompatActivity() {
 
-    val CITY: String = "seattle,us"
+    private var currentLocation: Location? = null
+    private lateinit var locationManager: LocationManager
+
+    private var locationByGps: Location? = null
+    private var locationByNetwork: Location? = null
+    private var latitude: Double? = null
+    private var longitude: Double? = null
+    private var addresses: List<Address>? = null
+
+    private lateinit var city: String
     val API: String = "ab994ab9dfeb6900f29b66b59b58f209"
 
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        isLocationPermissionGranted()
+
         weatherTask().execute()
+    }
+
+    private fun isLocationPermissionGranted(): Boolean {
+        return if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this, android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                ) ,1
+            )
+            Log.i("location_message", "Couldn't get location")
+            city = "New York"
+            false
+        } else {
+            val lastKnownLocationByGps =
+                locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            lastKnownLocationByGps?.let {
+                locationByGps = lastKnownLocationByGps
+            }
+            val lastKnownLocationByNetwork =
+                locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            lastKnownLocationByNetwork?.let {
+                locationByNetwork = lastKnownLocationByNetwork
+            }
+
+            if (locationByGps == null && locationByNetwork != null) {
+                getLocationByNetwork()
+
+            } else if (locationByNetwork == null && locationByGps != null) {
+                getLocationByGPS()
+
+            } else if (locationByGps != null && locationByNetwork != null) {
+                if (locationByGps!!.accuracy > locationByNetwork!!.accuracy) {
+                    getLocationByGPS()
+                } else {
+                    getLocationByNetwork()
+                }
+            }
+            true
+        }
+    }
+
+    private fun getLocationByGPS() {
+        currentLocation = locationByGps
+        latitude = currentLocation?.latitude
+        longitude = currentLocation?.longitude
+        val geocoder = Geocoder(this, Locale.getDefault())
+        addresses = geocoder.getFromLocation(latitude!!, longitude!!, 1)
+        city = addresses!![0].locality
+        Log.i("location_message", "Could get location by GPS, city: $city, lat: $latitude, long: $longitude")
+    }
+
+    private fun getLocationByNetwork() {
+        currentLocation = locationByNetwork
+        latitude = currentLocation?.latitude
+        longitude = currentLocation?.longitude
+        val geocoder = Geocoder(this, Locale.getDefault())
+        addresses = geocoder.getFromLocation(latitude!!, longitude!!, 1)
+        city = addresses!![0].locality
+        Log.i("location_message", "Could get location by network, city: $city, lat: $latitude, long: $longitude")
     }
 
     inner class weatherTask() : AsyncTask<String, Void, String>() {
@@ -36,7 +124,7 @@ class MainActivity : AppCompatActivity() {
         override fun doInBackground(vararg p0: String?): String? {
             var response: String?
             try {
-                response = URL("https://api.openweathermap.org/data/2.5/weather?q=$CITY&units=metric&appid=$API")
+                response = URL("https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&&units=metric&appid=$API")
                     .readText(Charsets.UTF_8)
             } catch(e: Exception) {
                 response = null
