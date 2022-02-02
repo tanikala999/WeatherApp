@@ -47,6 +47,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        isLocationPermissionGranted()
+        weatherTask().execute()
+
         val unitsButton = findViewById<Button>(R.id.units_button)
         unitsButton.text = "°C"
 
@@ -61,12 +65,6 @@ class MainActivity : AppCompatActivity() {
                 weatherTask().execute()
             }
         }
-
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
-        isLocationPermissionGranted()
-
-        weatherTask().execute()
 
         val locationSearch: EditText = findViewById(R.id.location_search)
         locationSearch.setOnEditorActionListener { _, actionId, _ ->
@@ -137,23 +135,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getLocationByGPS() {
-        currentLocation = locationByGps
-        latitude = currentLocation?.latitude
-        longitude = currentLocation?.longitude
-        val geocoder = Geocoder(this, Locale.getDefault())
-        addresses = geocoder.getFromLocation(latitude!!, longitude!!, 1)
-        city = addresses!![0].locality
-        Log.i("location_message", "Could get location by GPS, city: $city, lat: $latitude, long: $longitude")
+        try{
+            currentLocation = locationByGps
+            latitude = currentLocation?.latitude
+            longitude = currentLocation?.longitude
+            val geocoder = Geocoder(this, Locale.getDefault())
+            addresses = geocoder.getFromLocation(latitude!!, longitude!!, 1)
+            city = addresses!![0].locality
+            Log.i("location_message", "Could get location by GPS, city: $city, lat: $latitude, long: $longitude")
+        } catch (e: Exception) {
+            findViewById<ProgressBar>(R.id.loader).visibility = View.GONE
+            findViewById<ConstraintLayout>(R.id.search_layout).visibility = View.VISIBLE
+            findViewById<TextView>(R.id.error_text).visibility = View.VISIBLE
+        }
     }
 
     private fun getLocationByNetwork() {
-        currentLocation = locationByNetwork
-        latitude = currentLocation?.latitude
-        longitude = currentLocation?.longitude
-        val geocoder = Geocoder(this, Locale.getDefault())
-        addresses = geocoder.getFromLocation(latitude!!, longitude!!, 1)
-        city = addresses!![0].locality
-        Log.i("location_message", "Could get location by network, city: $city, lat: $latitude, long: $longitude")
+        try {
+            currentLocation = locationByNetwork
+            latitude = currentLocation?.latitude
+            longitude = currentLocation?.longitude
+            val geocoder = Geocoder(this, Locale.getDefault())
+            addresses = geocoder.getFromLocation(latitude!!, longitude!!, 1)
+            city = addresses!![0].locality
+            Log.i("location_message", "Could get location by network, city: $city, lat: $latitude, long: $longitude")
+        } catch (e: Exception) {
+            findViewById<ProgressBar>(R.id.loader).visibility = View.GONE
+            findViewById<ConstraintLayout>(R.id.search_layout).visibility = View.VISIBLE
+            findViewById<TextView>(R.id.error_text).visibility = View.VISIBLE
+        }
     }
 
     inner class weatherTask() : AsyncTask<String, Void, String>() {

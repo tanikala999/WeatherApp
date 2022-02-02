@@ -225,10 +225,6 @@
                         android:layout_height="wrap_content">
                     </TextView>
                 </LinearLayout>
-                <Space
-                    android:layout_width="10dp"
-                    android:layout_height="wrap_content"></Space>
-
             </LinearLayout>
             <Space
                 android:layout_width="wrap_content"
@@ -353,9 +349,6 @@
                         android:layout_height="wrap_content">
                     </TextView>
                 </LinearLayout>
-                <Space
-                    android:layout_width="10dp"
-                    android:layout_height="wrap_content"></Space>
             </LinearLayout>
         </LinearLayout>
     </RelativeLayout>
