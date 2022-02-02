@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="25dp"
+    android:id="@+id/layout"
     android:background="@drawable/gradient_bg"
     tools:context=".MainActivity">
 
@@ -17,26 +18,33 @@
 
         <LinearLayout
             android:id="@+id/address_container"
-            android:orientation="vertical"
-            android:gravity="center"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/units_button"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:text="C"
+                android:layout_gravity="end"
+                android:background="#3CF1EBF1"/>
 
             <TextView
                 android:id="@+id/address"
-                android:textSize="24sp"
-                android:text="Location"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-            </TextView>
+                android:layout_height="wrap_content"
+                android:layout_marginTop="80dp"
+                android:text="Location"
+                android:textSize="24sp" />
 
             <TextView
                 android:id="@+id/updated_at"
-                android:textSize="14sp"
-                android:text="Updated at"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-            </TextView>
+                android:layout_height="wrap_content"
+                android:text="Updated at"
+                android:textSize="14sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -217,10 +225,6 @@
                         android:layout_height="wrap_content">
                     </TextView>
                 </LinearLayout>
-                <Space
-                    android:layout_width="10dp"
-                    android:layout_height="wrap_content"></Space>
-
             </LinearLayout>
             <Space
                 android:layout_width="wrap_content"
@@ -345,9 +349,6 @@
                         android:layout_height="wrap_content">
                     </TextView>
                 </LinearLayout>
-                <Space
-                    android:layout_width="10dp"
-                    android:layout_height="wrap_content"></Space>
             </LinearLayout>
         </LinearLayout>
     </RelativeLayout>
@@ -368,5 +369,45 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
     </TextView>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/search_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginRight="30dp"
+        android:layout_marginLeft="30dp">
+
+        <ImageView
+            android:id="@+id/search_icon"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="start"
+            android:src="@drawable/ic_location_search_foreground"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+        </ImageView>
+
+        <EditText
+            android:id="@+id/location_search"
+            android:layout_width="240dp"
+            android:layout_height="50dp"
+            android:layout_gravity="end"
+            android:hint="Search for city"
+            android:maxLines="1"
+            android:imeOptions="actionSearch"
+            android:inputType="textAutoCorrect"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/white"
+            android:textColorHighlight="@color/white"
+            android:textColorHint="@color/white"
+            android:textColorLink="@color/white"
+            android:textSize="20sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toRightOf="@+id/search_icon"
+            app:layout_constraintTop_toTopOf="parent">
+        </EditText>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </RelativeLayout>
