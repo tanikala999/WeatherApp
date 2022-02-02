@@ -5,32 +5,26 @@ import android.content.pm.PackageManager
 import android.location.*
 import android.os.AsyncTask
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.text.Layout
 import android.util.Log
-import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
-import com.google.android.material.internal.ContextUtils.getActivity
-import com.google.android.material.snackbar.Snackbar
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import org.json.JSONObject
-import java.lang.Exception
 import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
-
 
 class MainActivity : AppCompatActivity() {
 
     private var currentLocation: Location? = null
     private lateinit var locationManager: LocationManager
-
     private var locationByGps: Location? = null
     private var locationByNetwork: Location? = null
     private var latitude: Double? = null
@@ -38,14 +32,31 @@ class MainActivity : AppCompatActivity() {
     private var addresses: List<Address>? = null
     private var isLocationSearched: Boolean = false
     private var units: String = "imperial"
-
     private lateinit var city: String
-    val API: String = "ab994ab9dfeb6900f29b66b59b58f209"
+    private val API: String = "ab994ab9dfeb6900f29b66b59b58f209"
+    private var localTimeZone: Long = 0
+    private var searchedTimeZone: Long = 0
+    private var timeZone: Long = 0
+
+    private val imperialUnits = object {
+        val degreeUnits = "°F"
+        val speedUnits = "mil/h"
+    }
+    private val metricUnits = object {
+        val degreeUnits = "°C"
+        val speedUnits = "met/s"
+    }
 
     @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val pullToRefresh = findViewById<SwipeRefreshLayout>(R.id.pullToRefresh)
+        pullToRefresh.setOnRefreshListener {
+            weatherTask().execute()
+            pullToRefresh.isRefreshing = false
+        }
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         isLocationPermissionGranted()
@@ -192,7 +203,7 @@ class MainActivity : AppCompatActivity() {
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
             try {
-                Log.i("location_message", "City: $city, lat: $latitude, long: $longitude")
+                Log.i("location_message", "City: $city")
                 val jsonObj = JSONObject(result!!)
                 val main = jsonObj.getJSONObject("main")
                 val sys = jsonObj.getJSONObject("sys")
@@ -207,10 +218,18 @@ class MainActivity : AppCompatActivity() {
                 val tempMin = "Min Temp: $tempMinInt"
                 val tempMaxInt = main.getInt("temp_max")
                 val tempMax = "Max Temp: $tempMaxInt"
-                val pressure = main.getString("pressure")
+                val pressure = main.getString("pressure") + "hPa"
                 val humidity = main.getString("humidity") + "%"
-                val sunrise: Long = sys.getLong("sunrise")
-                val sunset: Long = sys.getLong("sunset")
+                if (isLocationSearched) {
+                    searchedTimeZone = jsonObj.getLong("timezone")
+                } else {
+                    localTimeZone = jsonObj.getLong("timezone")
+                }
+                if (isLocationSearched) {
+                    timeZone = localTimeZone - searchedTimeZone
+                }
+                val sunrise: Long = sys.getLong("sunrise") - timeZone
+                val sunset: Long = sys.getLong("sunset") - timeZone
                 val windSpeed = wind.getString("speed")
                 val weatherDescription = weather.getString("description")
                 val address = jsonObj.getString("name") + ", " + sys.getString("country")
@@ -218,14 +237,29 @@ class MainActivity : AppCompatActivity() {
                 findViewById<TextView>(R.id.address).text = address
                 findViewById<TextView>(R.id.updated_at).text = updatedAtText
                 findViewById<TextView>(R.id.status).text = weatherDescription.capitalize()
-                findViewById<TextView>(R.id.temp).text = temp
-                findViewById<TextView>(R.id.temp_min).text = tempMin
-                findViewById<TextView>(R.id.temp_max).text = tempMax
+                val tempValue = findViewById<TextView>(R.id.temp)
+                val tempMinValue = findViewById<TextView>(R.id.temp_min)
+                val tempMaxValue = findViewById<TextView>(R.id.temp_max)
+                if (units == "metric") {
+                    tempValue.text = temp + metricUnits.degreeUnits
+                    tempMinValue.text = tempMin + metricUnits.degreeUnits
+                    tempMaxValue.text = tempMax + metricUnits.degreeUnits
+                } else {
+                    tempValue.text = temp + imperialUnits.degreeUnits
+                    tempMinValue.text = tempMin + imperialUnits.degreeUnits
+                    tempMaxValue.text = tempMax + imperialUnits.degreeUnits
+                }
+
                 findViewById<TextView>(R.id.sunrise).text = SimpleDateFormat("hh:mm a",
-                    Locale.ENGLISH).format(Date(sunrise * 1000))
+                    Locale.getDefault()).format(Date(sunrise * 1000))
                 findViewById<TextView>(R.id.sunset).text = SimpleDateFormat("hh:mm a",
-                    Locale.ENGLISH).format(Date(sunset * 1000))
-                findViewById<TextView>(R.id.wind).text = windSpeed
+                    Locale.getDefault()).format(Date(sunset * 1000))
+                val windSpeedValue = findViewById<TextView>(R.id.wind)
+                if (units == "metric") {
+                    windSpeedValue.text = windSpeed + metricUnits.speedUnits
+                } else {
+                    windSpeedValue.text = windSpeed + imperialUnits.speedUnits
+                }
                 findViewById<TextView>(R.id.pressure).text = pressure
                 findViewById<TextView>(R.id.humidity).text = humidity
 
