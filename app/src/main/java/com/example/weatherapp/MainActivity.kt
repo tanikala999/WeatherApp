@@ -1,6 +1,5 @@
 package com.example.weatherapp
 
-import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.*
@@ -8,13 +7,18 @@ import android.os.AsyncTask
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.Layout
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
-import android.widget.ProgressBar
-import android.widget.RelativeLayout
-import android.widget.TextView
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.*
 import androidx.annotation.RequiresApi
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
+import com.google.android.material.internal.ContextUtils.getActivity
+import com.google.android.material.snackbar.Snackbar
 import org.json.JSONObject
 import java.lang.Exception
 import java.net.URL
@@ -32,6 +36,8 @@ class MainActivity : AppCompatActivity() {
     private var latitude: Double? = null
     private var longitude: Double? = null
     private var addresses: List<Address>? = null
+    private var isLocationSearched: Boolean = false
+    private var units: String = "imperial"
 
     private lateinit var city: String
     val API: String = "ab994ab9dfeb6900f29b66b59b58f209"
@@ -41,11 +47,48 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val unitsButton = findViewById<Button>(R.id.units_button)
+        unitsButton.text = "°C"
+
+        unitsButton.setOnClickListener {
+            if (units.equals("imperial")) {
+                units = "metric"
+                unitsButton.text = "°F"
+                weatherTask().execute()
+            } else {
+                units = "imperial"
+                unitsButton.text = "°C"
+                weatherTask().execute()
+            }
+        }
+
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
         isLocationPermissionGranted()
 
         weatherTask().execute()
+
+        val locationSearch: EditText = findViewById(R.id.location_search)
+        locationSearch.setOnEditorActionListener { _, actionId, _ ->
+            return@setOnEditorActionListener when (actionId) {
+                EditorInfo.IME_ACTION_SEARCH -> {
+
+                    city = locationSearch.text.toString()
+                    isLocationSearched = true
+                    locationSearch.text = null
+
+                    val searchKeyboard = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                    searchKeyboard.hideSoftInputFromWindow(
+                        locationSearch.applicationWindowToken,
+                        InputMethodManager.HIDE_NOT_ALWAYS
+                    )
+
+                    weatherTask().execute()
+                    true
+                }
+                else -> false
+            }
+        }
     }
 
     private fun isLocationPermissionGranted(): Boolean {
@@ -117,25 +160,30 @@ class MainActivity : AppCompatActivity() {
         override fun onPreExecute() {
             super.onPreExecute()
             findViewById<ProgressBar>(R.id.loader).visibility = View.VISIBLE
+            findViewById<ConstraintLayout>(R.id.search_layout).visibility = View.GONE
             findViewById<RelativeLayout>(R.id.main_container).visibility = View.GONE
             findViewById<TextView>(R.id.error_text).visibility = View.GONE
         }
 
         override fun doInBackground(vararg p0: String?): String? {
-            var response: String?
-            try {
-                response = URL("https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&&units=metric&appid=$API")
-                    .readText(Charsets.UTF_8)
-            } catch(e: Exception) {
-                response = null
+            return try {
+                if (isLocationSearched) {
+                    URL("https://api.openweathermap.org/data/2.5/weather?q=$city&&units=$units&appid=$API")
+                        .readText(Charsets.UTF_8)
+                } else {
+                    URL("https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&&units=$units&appid=$API")
+                        .readText(Charsets.UTF_8)
+                }
+            } catch (e: Exception) {
+                null
             }
-            return response
         }
 
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
             try {
-                val jsonObj = JSONObject(result)
+                Log.i("location_message", "City: $city, lat: $latitude, long: $longitude")
+                val jsonObj = JSONObject(result!!)
                 val main = jsonObj.getJSONObject("main")
                 val sys = jsonObj.getJSONObject("sys")
                 val wind = jsonObj.getJSONObject("wind")
@@ -144,13 +192,13 @@ class MainActivity : AppCompatActivity() {
                 val updatedAtText = "Updated at: ${SimpleDateFormat("dd/MM/yyyy hh:mm a", 
                     Locale.ENGLISH).format(Date(updatedAt * 1000))}"
                 val tempInt = main.getInt("temp")
-                val temp = "$tempInt°C"
+                val temp = "$tempInt"
                 val tempMinInt = main.getInt("temp_min")
-                val tempMin = "Min Temp: $tempMinInt°C"
+                val tempMin = "Min Temp: $tempMinInt"
                 val tempMaxInt = main.getInt("temp_max")
-                val tempMax = "Max Temp: $tempMaxInt°C"
+                val tempMax = "Max Temp: $tempMaxInt"
                 val pressure = main.getString("pressure")
-                val humidity = main.getString("humidity")
+                val humidity = main.getString("humidity") + "%"
                 val sunrise: Long = sys.getLong("sunrise")
                 val sunset: Long = sys.getLong("sunset")
                 val windSpeed = wind.getString("speed")
@@ -172,9 +220,11 @@ class MainActivity : AppCompatActivity() {
                 findViewById<TextView>(R.id.humidity).text = humidity
 
                 findViewById<ProgressBar>(R.id.loader).visibility = View.GONE
+                findViewById<ConstraintLayout>(R.id.search_layout).visibility = View.VISIBLE
                 findViewById<RelativeLayout>(R.id.main_container).visibility = View.VISIBLE
             } catch (e: Exception) {
                 findViewById<ProgressBar>(R.id.loader).visibility = View.GONE
+                findViewById<ConstraintLayout>(R.id.search_layout).visibility = View.VISIBLE
                 findViewById<TextView>(R.id.error_text).visibility = View.VISIBLE
             }
         }
