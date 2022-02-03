@@ -77,6 +77,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val currentLocationButton = findViewById<ImageButton>(R.id.current_location_button)
+        currentLocationButton.setOnClickListener {
+            isLocationPermissionGranted()
+            weatherTask().execute()
+        }
+
         val locationSearch: EditText = findViewById(R.id.location_search)
         locationSearch.setOnEditorActionListener { _, actionId, _ ->
             return@setOnEditorActionListener when (actionId) {
