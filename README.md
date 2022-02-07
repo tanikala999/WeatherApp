@@ -6,4 +6,4 @@ It displays the weather in the current location, as well as some characteristics
 
 Screenshots for better visualization: 
 
-![Current Location](https://github.com/[tanikala999]/[WeatherApp]/blob/app/src/main/res/Current_location.png?raw=true)
+![Current Location](https://github.com/tanikala999/WeatherApp/blob/app/src/main/res/Current_location.png?raw=true)
