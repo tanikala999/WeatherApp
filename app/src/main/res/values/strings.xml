@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">WeatherApp</string>
+    <string name="search_for_city_text">Search for city</string>
+    <string name="error_text">Something went wrong</string>
+    <string name="my_name">Tatiana</string>
+    <string name="created_by_text">Created by</string>
+    <string name="value_placeholder">5:30am</string>
+    <string name="humidity_text">Humidity</string>
+    <string name="pressure_text">Pressure</string>
+    <string name="wind_text">Wind</string>
+    <string name="sunset_text">Sunset</string>
+    <string name="sunrise_text">Sunrise</string>
+    <string name="max_temp_text">Max temp</string>
+    <string name="min_temp_text">Min temp</string>
+    <string name="temp_value">24°C</string>
+    <string name="temp_description_text">Clear Sky</string>
+    <string name="updated_at_text">Updated at</string>
+    <string name="location_text">Location</string>
+    <string name="degree_text">C</string>
 </resources>
